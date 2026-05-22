@@ -1,0 +1,127 @@
+## API 文档
+
+### 1. 充值
+
+向用户余额添加资金。
+
+**Endpoint**: `POST /api/users/:id/deposit`
+
+**Headers**:
+- `Idempotency-Key`: 必需的幂等性键
+
+**Body**:
+```json
+{
+  "amount": 100
+}
+```
+
+**Response** (200):
+```json
+{
+  "id": 1,
+  "username": "user1",
+  "balance": 1100
+}
+```
+
+**错误响应**:
+- `400`: 无效金额或缺少幂等键
+- `409`: 幂等键已使用但金额不同
+- `500`: 服务器内部错误
+
+### 2. 下注
+
+在游戏中下注
+
+**Endpoint**: `POST /api/bets`
+
+**Headers**:
+- `Idempotency-Key`: 必需的幂等性键
+
+**Body**:
+```json
+{
+  "userId": 1,
+  "gameId": "game-001",
+  "amount": 100
+}
+```
+
+**Response** (201):
+```json
+{
+  "id": "uuid-here",
+  "userId": 1,
+  "gameId": "game-001",
+  "amount": 100,
+  "status": "PLACED",
+  "createdAt": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**错误响应**:
+- `400`: 无效请求体或余额不足
+- `500`: 服务器内部错误
+
+### 3. 结算
+
+将下注结算为赢或输
+
+**Endpoint**: `POST /api/bets/:id/settle`
+
+**Body**:
+```json
+{
+  "result": "WIN"
+}
+```
+
+**Response** (200):
+```json
+{
+  "id": "uuid-here",
+  "userId": 1,
+  "gameId": "game-001",
+  "amount": 100,
+  "status": "SETTLED",
+  "updatedAt": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**规则**:
+- `WIN`: 返回2倍下注金额（本金+利润）
+- `LOSE`: 无返还
+- 只能结算已下注状态的订单
+
+**错误响应**:
+- `400`: 无效结果或下注状态不是已下注
+- `500`: 服务器内部错误
+
+### 4. 取消
+
+取消下注并退款
+
+**Endpoint**: `POST /api/bets/:id/cancel`
+
+**Response** (200):
+```json
+{
+  "id": "uuid-here",
+  "userId": 1,
+  "gameId": "game-001",
+  "amount": 100,
+  "status": "CANCELLED",
+  "updatedAt": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**规则**:
+- 只能取消已下注状态的订单
+- 立即全额退款
+
+**错误响应**:
+- `400`: 下注状态不是已下注
+- `500`: 服务器内部错误
+
+### 5. 管理员对账
