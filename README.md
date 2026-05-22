@@ -40,7 +40,7 @@ npx prisma studio
 
 这将在 `http://localhost:5555` 打开数据库可视化界面。
 
-## 运行应用
+## 运行步骤
 
 开发模式:
 ```bash
@@ -55,9 +55,165 @@ npm start
 
 应用将在 http://localhost:3000 可用
 
-## Swagger API 测试页面
+## API 说明
 
-交互式 API 文档可在以下地址访问：
+## API 文档
+
+### 1. 充值
+
+向用户余额添加资金。
+
+**Endpoint**: `POST /api/users/:id/deposit`
+
+**Headers**:
+- `Idempotency-Key`: 必需的幂等性键
+
+**Body**:
+```json
+{
+  "amount": 100
+}
+```
+
+**Response** (200):
+```json
+{
+  "id": 1,
+  "username": "user1",
+  "balance": 1100
+}
+```
+
+**错误响应**:
+- `400`: 无效金额或缺少幂等键
+- `409`: 幂等键已使用但金额不同
+- `500`: 服务器内部错误
+
+### 2. 下注
+
+在游戏中下注
+
+**Endpoint**: `POST /api/bets`
+
+**Headers**:
+- `Idempotency-Key`: 必需的幂等性键
+
+**Body**:
+```json
+{
+  "userId": 1,
+  "gameId": "game-001",
+  "amount": 100
+}
+```
+
+**Response** (201):
+```json
+{
+  "id": "uuid-here",
+  "userId": 1,
+  "gameId": "game-001",
+  "amount": 100,
+  "status": "PLACED",
+  "createdAt": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**错误响应**:
+- `400`: 无效请求体或余额不足
+- `500`: 服务器内部错误
+
+### 3. 结算
+
+将下注结算为赢或输
+
+**Endpoint**: `POST /api/bets/:id/settle`
+
+**Body**:
+```json
+{
+  "result": "WIN"
+}
+```
+
+**Response** (200):
+```json
+{
+  "id": "uuid-here",
+  "userId": 1,
+  "gameId": "game-001",
+  "amount": 100,
+  "status": "SETTLED",
+  "updatedAt": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**规则**:
+- `WIN`: 返回2倍下注金额（本金+利润）
+- `LOSE`: 无返还
+- 只能结算已下注状态的订单
+
+**错误响应**:
+- `400`: 无效结果或下注状态不是已下注
+- `500`: 服务器内部错误
+
+### 4. 取消
+
+取消下注并退款
+
+**Endpoint**: `POST /api/bets/:id/cancel`
+
+**Response** (200):
+```json
+{
+  "id": "uuid-here",
+  "userId": 1,
+  "gameId": "game-001",
+  "amount": 100,
+  "status": "CANCELLED",
+  "updatedAt": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**规则**:
+- 只能取消已下注状态的订单
+- 立即全额退款
+
+**错误响应**:
+- `400`: 下注状态不是已下注
+- `500`: 服务器内部错误
+
+### 5. 管理员对账
+
+验证账户余额并检测异常
+
+**Endpoint**: `GET /api/admin/reconcile?userId=1`
+
+**Response** (200):
+```json
+{
+  "userId": 1,
+  "currentBalance": "1000",
+  "calculatedBalance": "1000",
+  "isConsistent": true,
+  "betStats": {
+    "placed": 2,
+    "settled": 1,
+    "cancelled": 0
+  },
+  "anomalies": []
+}
+```
+
+**异常检测**:
+- 数据库余额与账本总和不匹配
+- 已下注订单缺少扣款记录
+- 已结算订单存在重复发奖记录
+- 已取消订单缺少退款记录
+
+---
+
+也可以通过 Swagger UI 在线测试：
 
 **Swagger UI**: `http://localhost:3000/api-docs`
 
@@ -101,7 +257,7 @@ npm start
 - 使用相同的 `Idempotency-Key` 和相同的负载 → 返回缓存响应
 - 使用相同的 `Idempotency-Key` 但金额不同 → 返回 409 Conflict
 
-## 测试
+## 测试命令
 
 运行所有测试:
 ```bash
@@ -219,6 +375,12 @@ PLACED → CANCELLED (refund)
 - 业务逻辑中绝不直接修改 User.balance
 - 始终使用事务处理余额+账本操作
 - 通过对账 API 检测异常
+
+## 在线预览地址
+
+本地开发：http://localhost:3000
+
+Swagger API 文档：http://localhost:3000/api-docs
 
 
 
