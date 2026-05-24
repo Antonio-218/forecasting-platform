@@ -37,3 +37,31 @@ export interface ReconciliationResponse {
   }
   anomalies: string[]           // 异常列表
 }
+
+// 下注状态常量
+export const BetStatus = {
+  PLACED: 'PLACED',
+  SETTLED: 'SETTLED',
+  CANCELLED: 'CANCELLED',
+} as const
+
+export type BetStatus = (typeof BetStatus)[keyof typeof BetStatus]
+
+// 下注结果常量
+export const BetResult = {
+  WIN: 'WIN',
+  LOSE: 'LOSE',
+} as const
+
+export type BetResult = (typeof BetResult)[keyof typeof BetResult]
+
+// 账本类型常量
+export const LedgerType = {
+  BET_DEBIT: 'BET_DEBIT',
+  BET_CREDIT: 'BET_CREDIT',
+  BET_REFUND: 'BET_REFUND',
+  DEPOSIT: 'DEPOSIT',
+} as const
+
+export type LedgerType = (typeof LedgerType)[keyof typeof LedgerType]
+
