@@ -69,8 +69,10 @@ describe('Forecasting Platform Integration Tests', () => {
 
     await prisma.idempotencyKey.create({
       data: {
-        id: idempotencyKey,
-        endpoint: '/api/users/test/deposit',
+        key: idempotencyKey,
+        operation: '/api/users/test/deposit',
+        requestHash: 'test-hash-123',
+        statusCode: 200,
         response: JSON.stringify({ amount: depositAmount }),
       },
     })
@@ -101,8 +103,10 @@ describe('Forecasting Platform Integration Tests', () => {
 
     await prisma.idempotencyKey.create({
       data: {
-        id: 'test-bet-key-456',
-        endpoint: '/api/bets',
+        key: 'test-bet-key-456',
+        operation: '/api/bets',
+        requestHash: 'test-hash-456',
+        statusCode: 201,
         response: JSON.stringify({ betId: bet.id, amount: betAmount }),
       },
     })
