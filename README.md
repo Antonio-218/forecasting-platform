@@ -230,28 +230,28 @@ npm start
 ### 测试数据
 
 预置用户：
-- user1 (id: 68) - balance: 1000
-- user2 (id: 69) - balance: 500
-- user3 (id: 70) - balance: 2000
+- user1 (id: 1) - balance: 1000
+- user2 (id: 2) - balance: 500
+- user3 (id: 3) - balance: 2000
 
 **快速测试流程：**
 
-1. **Deposit** - 给用户68充值100:
-   - id: `68`, Idempotency-Key: `deposit-001`, amount: `100`
+1. **Deposit** - 给用户1充值100:
+   - id: `1`, Idempotency-Key: `deposit-001`, amount: `100`
 
-2. **Place Bet** - 为用户68创建下注:
-   - Idempotency-Key: `bet-001`, userId: `68`, gameId: `game-001`, amount: `50`
+2. **Place Bet** - 为用户1创建下注:
+   - Idempotency-Key: `bet-001`, userId: `1`, gameId: `game-001`, amount: `50`
 
 3. **Settle Bet** - 结算为赢:
-   - id: `{bet-id}` (从 Place Bet 响应中复制，例如 `3fa85f64-5717-4562-b3fc-2c963f66afa6`)
+   - id: `{bet-id}` (从 Place Bet 响应中复制)
    - Idempotency-Key: `settle-001`, result: `WIN`
 
 4. **Cancel Bet** - 取消下注 (替代结算):
    - id: `{bet-id}` (另一个 PLACED 状态的下注 ID)
    - Idempotency-Key: `cancel-001`
 
-5. **Admin Reconcile** - 检查用户68余额:
-   - userId: `68`
+5. **Admin Reconcile** - 检查用户1余额:
+   - userId: `1`
 
 **幂等性测试：**
 - 使用相同的 `Idempotency-Key` 和相同的负载 → 返回缓存响应
@@ -312,7 +312,10 @@ npm run test:watch
 
 ### 幂等键表
 - `id`: 唯一标识符
-- `endpoint`: API 端点
+- `operation`: 操作类型/端点路径
+- `key`: 幂等键
+- `requestHash`: 请求内容的哈希值（SHA-256）
+- `statusCode`: HTTP 状态码
 - `response`: 缓存响应 (JSON 字符串)
 - `createdAt`: 创建时间
 
