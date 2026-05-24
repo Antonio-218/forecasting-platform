@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { UserService } from '@/lib/services/user.service'
-import { checkIdempotency, saveIdempotency, validateIdempotencyAmount } from '@/lib/idempotency'
+import { checkIdempotency, saveIdempotency, generateRequestHash } from '@/lib/idempotency'
 
 /**
  * 用户充值接口
  * POST /api/users/:id/deposit
- * 
+ *
  * 功能：向用户余额添加资金
  * 需要 Idempotency-Key 请求头支持幂等性
- * 额外验证：相同幂等键的金额必须一致
+ * 额外验证：相同幂等键的请求内容必须一致
  */
 export async function POST(
   request: NextRequest,
@@ -28,7 +28,7 @@ export async function POST(
     }
 
     const idempotencyKey = request.headers.get('Idempotency-Key')
-    const endpoint = `/api/users/${userId}/deposit`
+    const operation = `/api/users/${userId}/deposit`
 
     // 验证幂等键
     if (!idempotencyKey) {
@@ -38,22 +38,19 @@ export async function POST(
       )
     }
 
+    // 生成请求哈希
+    const requestHash = generateRequestHash(body)
+
     // 检查幂等键是否已存在
-    const idempotencyCheck = await checkIdempotency(idempotencyKey, endpoint)
+    const idempotencyCheck = await checkIdempotency(
+      idempotencyKey,
+      operation,
+      requestHash
+    )
     if (idempotencyCheck.exists) {
-      // 如果已存在，验证金额是否一致
-      const previousResponse = idempotencyCheck.response
-      const previousAmount = previousResponse.amount || previousResponse.bet?.amount
-
-      if (previousAmount !== undefined && previousAmount !== amount) {
-        return NextResponse.json(
-          { error: 'Idempotency key already used with different amount' },
-          { status: 409 }
-        )
-      }
-
-      // 金额一致，返回缓存的响应
-      return NextResponse.json(previousResponse)
+      return NextResponse.json(idempotencyCheck.response, {
+        status: idempotencyCheck.statusCode,
+      })
     }
 
     // 调用服务层执行充值
@@ -62,11 +59,17 @@ export async function POST(
       id: user.id,
       username: user.username,
       balance: Number(user.balance),
-      amount, // 包含金额用于幂等性验证
+      amount,
     }
 
     // 保存幂等键和响应
-    await saveIdempotency(idempotencyKey, endpoint, response)
+    await saveIdempotency(
+      idempotencyKey,
+      operation,
+      requestHash,
+      200,
+      response
+    )
 
     return NextResponse.json(response)
   } catch (error) {
