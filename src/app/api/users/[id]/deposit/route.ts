@@ -42,15 +42,25 @@ export async function POST(
     const requestHash = generateRequestHash(body)
 
     // 检查幂等键是否已存在
-    const idempotencyCheck = await checkIdempotency(
-      idempotencyKey,
-      operation,
-      requestHash
-    )
-    if (idempotencyCheck.exists) {
-      return NextResponse.json(idempotencyCheck.response, {
-        status: idempotencyCheck.statusCode,
-      })
+    try {
+      const idempotencyCheck = await checkIdempotency(
+        idempotencyKey,
+        operation,
+        requestHash
+      )
+      if (idempotencyCheck.exists) {
+        return NextResponse.json(idempotencyCheck.response, {
+          status: idempotencyCheck.statusCode,
+        })
+      }
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Idempotency key already used with different request content') {
+        return NextResponse.json(
+          { error: 'Idempotency key already used with different amount' },
+          { status: 409 }
+        )
+      }
+      throw error
     }
 
     // 调用服务层执行充值
