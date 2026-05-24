@@ -9,11 +9,13 @@ const prisma = new PrismaClient()
 async function main() {
   // 使用 upsert 创建或更新用户数据
   // 如果用户名已存在则不更新，不存在则创建
+  // 指定固定 ID 确保每次运行后 ID 一致
   const users = await Promise.all([
     prisma.user.upsert({
       where: { username: 'user1' },
       update: {},
       create: {
+        id: 1,
         username: 'user1',
         balance: 1000,
       },
@@ -22,6 +24,7 @@ async function main() {
       where: { username: 'user2' },
       update: {},
       create: {
+        id: 2,
         username: 'user2',
         balance: 500,
       },
@@ -30,6 +33,7 @@ async function main() {
       where: { username: 'user3' },
       update: {},
       create: {
+        id: 3,
         username: 'user3',
         balance: 2000,
       },
