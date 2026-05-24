@@ -21,7 +21,8 @@
     "next": "14.2.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "swagger-ui-react": "^5.32.5"
+    "swagger-ui-react": "^5.32.5",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
