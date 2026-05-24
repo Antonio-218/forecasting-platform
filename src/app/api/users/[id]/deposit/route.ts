@@ -38,24 +38,22 @@ export async function POST(
       )
     }
 
-    // 验证幂等键的金额一致性（防止相同幂等键使用不同金额）
-    const amountValidation = await validateIdempotencyAmount(
-      idempotencyKey,
-      endpoint,
-      amount
-    )
-
-    if (!amountValidation.valid) {
-      return NextResponse.json(
-        { error: amountValidation.error },
-        { status: 409 }
-      )
-    }
-
     // 检查幂等键是否已存在
     const idempotencyCheck = await checkIdempotency(idempotencyKey, endpoint)
     if (idempotencyCheck.exists) {
-      return NextResponse.json(idempotencyCheck.response)
+      // 如果已存在，验证金额是否一致
+      const previousResponse = idempotencyCheck.response
+      const previousAmount = previousResponse.amount || previousResponse.bet?.amount
+
+      if (previousAmount !== undefined && previousAmount !== amount) {
+        return NextResponse.json(
+          { error: 'Idempotency key already used with different amount' },
+          { status: 409 }
+        )
+      }
+
+      // 金额一致，返回缓存的响应
+      return NextResponse.json(previousResponse)
     }
 
     // 调用服务层执行充值
@@ -64,6 +62,7 @@ export async function POST(
       id: user.id,
       username: user.username,
       balance: Number(user.balance),
+      amount, // 包含金额用于幂等性验证
     }
 
     // 保存幂等键和响应
